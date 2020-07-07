@@ -1,13 +1,6 @@
 /*jslint browser: true, undef: true, eqeqeq: true, nomen: true, white: true */
 /*global window: false, document: false */
 
-/*
- * fix looped audio
- * add fruits + levels
- * fix what happens when a ghost is eaten (should go back to base)
- * do proper ghost mechanics (blinky/wimpy etc)
- */
-
 var NONE        = 4,
     UP          = 3,
     LEFT        = 2,
@@ -30,10 +23,10 @@ Pacman.Ghost = function (game, map, colour) {
         eatable   = null,
         eaten     = null,
         due       = null;
-    
+    //CHANGE GHOST SPEED HERE
     function getNewCoord(dir, current) { 
         
-        var speed  = isVunerable() ? 1 : isHidden() ? 4 : 2,
+        var speed  = isVunerable() ? 0.8 : isHidden() ? 2.4 : 1.2,
             xSpeed = (dir === LEFT && -speed || dir === RIGHT && speed || 0),
             ySpeed = (dir === DOWN && speed || dir === UP && -speed || 0);
     
@@ -101,6 +94,7 @@ Pacman.Ghost = function (game, map, colour) {
     function eat() { 
         eatable = null;
         eaten = game.getTick();
+        position = {"x": 90, "y": 80};
     };
 
     function pointToCoord(x) {
@@ -139,17 +133,18 @@ Pacman.Ghost = function (game, map, colour) {
         return colour;
     };
 
+/*DRAWING GHOSTS  - WELL ACTUALLY, NOW THEY'RE COLOURFUL ANGELS*/
     function draw(ctx) {
   
         var s    = map.blockSize, 
             top  = (position.y/10) * s,
             left = (position.x/10) * s;
     
-        if (eatable && secondsAgo(eatable) > 8) {
+        if (eatable && secondsAgo(eatable) > 10) {
             eatable = null;
         }
         
-        if (eaten && secondsAgo(eaten) > 3) { 
+        if (eaten && secondsAgo(eaten) > 5) { 
             eaten = null;
         }
         
@@ -160,13 +155,21 @@ Pacman.Ghost = function (game, map, colour) {
         var high = game.getTick() % 10 > 5 ? 3  : -3;
         var low  = game.getTick() % 10 > 5 ? -3 : 3;
 
+        ctx.beginPath();
+        ctx.fillStyle = "#FFF";
+        ctx.arc(left + 4,top + 8, s / 6, 0, 300, false);
+        ctx.arc((left + s) - 4,top + 8, s / 6, 0, 300, false);
+        //ctx.arc(left+10,top, s / 6, 0, 300, false);
+        ctx.closePath();
+        ctx.fill();
+
         ctx.fillStyle = getColour();
         ctx.beginPath();
 
         ctx.moveTo(left, base);
 
-        ctx.quadraticCurveTo(left, top, left + (s/2),  top);
-        ctx.quadraticCurveTo(left + s, top, left+s,  base);
+        ctx.quadraticCurveTo(left+s/3, top, left + s/2,  top);
+        ctx.quadraticCurveTo(left +2*s/3, top, left+s,  base);
         
         // Wavy things at the bottom
         ctx.quadraticCurveTo(tl-(inc*1), base+high, tl - (inc * 2),  base);
@@ -177,14 +180,35 @@ Pacman.Ghost = function (game, map, colour) {
 
         ctx.closePath();
         ctx.fill();
+		
+		// Draw the ellipse
+		ctx.strokeStyle = "#ffff00";
+		ctx.lineWidth   = 2;
+		ctx.beginPath();
+		ctx.ellipse(left+s/2, top+3, 4*s/10, s/12, 0, 0, 2 * Math.PI);
+        ctx.closePath();
+		ctx.stroke();
+		//ctx.beginPath();
+		/*ctx.fillStyle = "#00ffff";
+		ctx.moveTo(left, top);
+		ctx.quadraticCurveTo(left+(s/4), top+(s/6), left+(s/2), top+(s/6));
+		ctx.quadraticCurveTo(left+(3*s/4), top+(s/6), left+s, top);
+		ctx.quadraticCurveTo(left+(3*s/4), top-(s/6), left+(s/2), top+(s/6));
+		ctx.quadraticCurveTo(left+(s/4), top-(s/6), left, top);
+        ctx.closePath();
+		ctx.fill();
+		*/
+
 
         ctx.beginPath();
-        ctx.fillStyle = "#FFF";
-        ctx.arc(left + 6,top + 6, s / 6, 0, 300, false);
-        ctx.arc((left + s) - 6,top + 6, s / 6, 0, 300, false);
+        ctx.fillStyle = "#d9d9d9";
+        ctx.arc(left + 8,top + 6, s / 8, 0, 300, false);
+        ctx.arc((left + s) - 8,top + 6, s / 8, 0, 300, false);
+        //ctx.arc(left+10,top, s / 6, 0, 300, false);
         ctx.closePath();
         ctx.fill();
 
+		
         var f = s / 12;
         var off = {};
         off[RIGHT] = [f, 0];
@@ -194,9 +218,9 @@ Pacman.Ghost = function (game, map, colour) {
 
         ctx.beginPath();
         ctx.fillStyle = "#000";
-        ctx.arc(left+6+off[direction][0], top+6+off[direction][1], 
+        ctx.arc(left+8+off[direction][0], top+6+off[direction][1], 
                 s / 15, 0, 300, false);
-        ctx.arc((left+s)-6+off[direction][0], top+6+off[direction][1], 
+        ctx.arc((left+s)-8+off[direction][0], top+6+off[direction][1], 
                 s / 15, 0, 300, false);
         ctx.closePath();
         ctx.fill();
@@ -459,17 +483,18 @@ Pacman.User = function (game, map) {
 
     function calcAngle(dir, pos) { 
         if (dir == RIGHT && (pos.x % 10 < 5)) {
-            return {"start":0.25, "end":1.75, "direction": false};
+            return {"start":0.1, "end":1.9, "direction": false};
         } else if (dir === DOWN && (pos.y % 10 < 5)) { 
-            return {"start":0.75, "end":2.25, "direction": false};
+            return {"start":0.6, "end":2.4, "direction": false};
         } else if (dir === UP && (pos.y % 10 < 5)) { 
-            return {"start":1.25, "end":1.75, "direction": true};
+            return {"start":1.4, "end":1.6, "direction": true};
         } else if (dir === LEFT && (pos.x % 10 < 5)) {             
-            return {"start":0.75, "end":1.25, "direction": true};
+            return {"start":0.9, "end":1.1, "direction": true};
         }
         return {"start":0, "end":2, "direction": false};
     };
 
+/*DRAWING DYING PACMAN --- I MEAN RECYCLED CHORB I GUESS :( */
     function drawDead(ctx, amount) { 
 
         var size = map.blockSize, 
@@ -479,36 +504,179 @@ Pacman.User = function (game, map) {
             return;
         }
 
-        ctx.fillStyle = "#FFFF00";
+        ctx.fillStyle = "#ffff99";
         ctx.beginPath();        
         ctx.moveTo(((position.x/10) * size) + half, 
                    ((position.y/10) * size) + half);
         
         ctx.arc(((position.x/10) * size) + half, 
                 ((position.y/10) * size) + half,
-                half, 0, Math.PI * 2 * amount, true); 
+                0.6*half, 0, Math.PI * 2 * amount, true); 
         
         ctx.fill();    
     };
 
+/*DRAWING PACMAAAN   ---  WELL DAMN I GUESS NOW IT'S DRAWING HUNGRY HUNGRY CHORB */
     function draw(ctx) { 
 
         var s     = map.blockSize, 
             angle = calcAngle(direction, position);
 
-        ctx.fillStyle = "#FFFF00";
-
+		//sun rays (triangles)
+		//right
         ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 1.7*s / 2 ,
+                   ((position.y/10) * s) + 0.8 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + 2 * s/2 , ((position.y/10) * s) + s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 1.7*s/2  , ((position.y/10) * s) + 1.2*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
 
+		//left
+        ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 0.3*s / 2 ,
+                   ((position.y/10) * s) + 0.8 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + 0 * s/2 , ((position.y/10) * s) + s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 0.3*s/2  , ((position.y/10) * s) + 1.2*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
+		
+		//down
+        ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 0.8*s / 2 ,
+                   ((position.y/10) * s) + 1.7 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + s/2 , ((position.y/10) * s) + 2*s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 1.2*s/2  , ((position.y/10) * s) + 1.7*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
+
+		//up
+        ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 0.8*s / 2 ,
+                   ((position.y/10) * s) + 0.3 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + s/2 , ((position.y/10) * s) + 0*s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 1.2*s/2  , ((position.y/10) * s) + 0.3*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
+
+		//down right
+        ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 1.35*s / 2 ,
+                   ((position.y/10) * s) + 1.6 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + 1.8*s/2 , ((position.y/10) * s) + 1.75*s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 1.55*s/2  , ((position.y/10) * s) + 1.4*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
+
+		//up right
+        ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 1.35*s / 2 ,
+                   ((position.y/10) * s) + 0.4 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + 1.8*s/2 , ((position.y/10) * s) + 0.25*s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 1.55*s/2  , ((position.y/10) * s) + 0.6*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
+
+		//up left
+        ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 0.65*s / 2 ,
+                   ((position.y/10) * s) + 0.4 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + 0.2*s/2 , ((position.y/10) * s) + 0.25*s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 0.45*s/2  , ((position.y/10) * s) + 0.6*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
+
+		//down left
+        ctx.beginPath();        
+        ctx.fillStyle = "#ff9900";
+        ctx.moveTo(((position.x/10) * s) + 0.65*s / 2 ,
+                   ((position.y/10) * s) + 1.6 * s / 2 );
+		ctx.lineTo(((position.x/10) * s) + 0.2*s/2 , ((position.y/10) * s) + 1.75*s/2);				   
+		ctx.lineTo(((position.x/10) * s) + 0.45*s/2  , ((position.y/10) * s) + 1.4*s/2);				   
+        ctx.fill();    
+        ctx.closePath();        
+
+
+		//body (ball)
+        ctx.beginPath();        
+		ctx.fillStyle = "#ffff99";       
         ctx.moveTo(((position.x/10) * s) + s / 2,
                    ((position.y/10) * s) + s / 2);
         
         ctx.arc(((position.x/10) * s) + s / 2,
                 ((position.y/10) * s) + s / 2,
-                s / 2, Math.PI * angle.start, 
+                0.6*s / 2, Math.PI * angle.start, 
                 Math.PI * angle.end, angle.direction); 
         
         ctx.fill();    
+        ctx.closePath();        
+		
+		//eyes
+        var f = s / 12;
+
+		/*  help for self: use start and direction values to define where the eyes go while chrob is moving in different directions
+        if (dir == RIGHT && (pos.x % 10 < 5)) {
+            return {"start":0.1, "end":1.9, "direction": false};
+        } else if (dir === DOWN && (pos.y % 10 < 5)) { 
+            return {"start":0.6, "end":2.4, "direction": false};
+        } else if (dir === UP && (pos.y % 10 < 5)) { 
+            return {"start":1.4, "end":1.6, "direction": true};
+        } else if (dir === LEFT && (pos.x % 10 < 5)) {             
+            return {"start":0.9, "end":1.1, "direction": true};
+        }
+        return {"start":0, "end":2, "direction": false}; */
+
+		//eyes colour
+		ctx.fillStyle = "#0000ff";
+
+		//eyes when moving right
+		if (angle.start == 0.1 && angle.direction == false) { 
+			ctx.beginPath();
+			ctx.arc((position.x/10) * s+8+f, (position.y/10) * s+6+0, 
+					s / 15, 0, 300, false);
+			ctx.arc(((position.x/10) * s+s)-8+f, (position.y/10) * s+6+0, 
+					s / 15, 0, 300, false);
+			ctx.closePath();
+			ctx.fill();
+        }
+		//eyes when moving left		
+		else if (angle.start == 0.9 && angle.direction == true) { 
+			ctx.beginPath();
+			ctx.arc((position.x/10) * s+8-f, (position.y/10) * s+6+0, 
+					s / 15, 0, 300, false);
+			ctx.arc(((position.x/10) * s+s)-8-f, (position.y/10) * s+6+0, 
+					s / 15, 0, 300, false);
+			ctx.closePath();
+			ctx.fill();
+        }
+		//eyes when moving up
+		else if (angle.start == 1.4 && angle.direction == true) { 
+			ctx.beginPath();
+			ctx.arc((position.x/10) * s+8+0, (position.y/10) * s+6+3*f, 
+					s / 15, 0, 300, false);
+			ctx.arc(((position.x/10) * s+s)-8+0, (position.y/10) * s+6+3*f, 
+					s / 15, 0, 300, false);
+			ctx.closePath();
+			ctx.fill();
+        }
+		//eyes when moving down
+		else if (angle.start == 0.6 && angle.direction == false) { 
+			ctx.beginPath();
+			ctx.arc((position.x/10) * s+8+0, (position.y/10) * s+6+f, 
+					s / 15, 0, 300, false);
+			ctx.arc(((position.x/10) * s+s)-8+0, (position.y/10) * s+6+f, 
+					s / 15, 0, 300, false);
+			ctx.closePath();
+			ctx.fill();
+        }
+		
     };
     
     initUser();
@@ -600,6 +768,8 @@ Pacman.Map = function (size) {
         map[pos.y][pos.x] = type;
     };
 
+/*#DRAW THE PILLS  --  YES THEY ARE THE MIDDLE FINGER EMOJI BECAUSE THAT WAS HONESTLY SHOCKING*/
+/*ALSO THIS IS NOT HOW YOU COMMENT CODE BUT NEVERMIND */
     function drawPills(ctx) { 
 
         if (++pillSize > 30) {
@@ -611,16 +781,34 @@ Pacman.Map = function (size) {
                 if (map[i][j] === Pacman.PILL) {
                     ctx.beginPath();
 
+					//flashing backgound circle for pills
                     ctx.fillStyle = "#000";
 		            ctx.fillRect((j * blockSize), (i * blockSize), 
                                  blockSize, blockSize);
 
-                    ctx.fillStyle = "#FFF";
-                    ctx.arc((j * blockSize) + blockSize / 2,
-                            (i * blockSize) + blockSize / 2,
-                            Math.abs(5 - (pillSize/3)), 
+                    ctx.fillStyle = "#ffff00";
+                    ctx.arc((j * blockSize) + 7.5*blockSize / 12,
+                            (i * blockSize) + 7*blockSize / 12,
+                            Math.abs(5 - (pillSize/2.5)), 
                             0, 
                             Math.PI * 2, false); 
+                    ctx.fill();
+                    ctx.closePath();
+
+                    ctx.beginPath();
+                    ctx.fillStyle = "#ff9900";
+					//hand
+                    ctx.arc((j * blockSize) + 2*blockSize / 3,
+                            (i * blockSize) + 9*blockSize / 12,
+                            blockSize/5, 
+                            0, 
+                            Math.PI * 2, false); 
+					//thumb
+					ctx.ellipse((j * blockSize) + 6.25*blockSize / 12,
+                            (i * blockSize) + 9*blockSize / 12, 1.1*blockSize/11, blockSize/6, 0, 0, 2 * Math.PI);
+					//middle finger (i'm so sorry)
+					ctx.ellipse((j * blockSize) + 8*blockSize / 12,
+                            (i * blockSize) + 7*blockSize / 12, blockSize/12, blockSize/3.5, 0, 0, 2 * Math.PI);
                     ctx.fill();
                     ctx.closePath();
                 }
@@ -643,7 +831,8 @@ Pacman.Map = function (size) {
 		    }
 	    }
     };
-    
+
+/*#DRAW THE BLOCKS   -- THEY ARE LETTERS NOW BECAUSE CHORBS BE CHORBING */
     function drawBlock(y, x, ctx) {
 
         var layout = map[y][x];
@@ -665,7 +854,20 @@ Pacman.Map = function (size) {
                 ctx.fillStyle = "#FFF";
 		        ctx.fillRect((x * blockSize) + (blockSize / 2.5), 
                              (y * blockSize) + (blockSize / 2.5), 
-                             blockSize / 6, blockSize / 6);
+                             blockSize / 2, blockSize / 3);
+				ctx.lineWidth = 2;
+				ctx.strokeStyle = "#666666"
+				ctx.moveTo((x * blockSize) + 1.1*(blockSize / 2.5), (y * blockSize) + 1.1*(blockSize / 2.5));
+				ctx.lineTo((x * blockSize) + 1.6*(blockSize / 2.5), (y * blockSize) + 1.45*(blockSize / 2.5));
+				ctx.lineTo((x * blockSize) + (blockSize / 2.5) + (blockSize / 2), (y * blockSize) + 1.1*(blockSize / 2.5));
+				ctx.stroke();
+				ctx.strokeStyle = "#999999"
+				ctx.lineWidth = 1;
+				ctx.moveTo((x * blockSize) + 1.6*(blockSize / 2.5), (y * blockSize) + 1.45*(blockSize / 2.5));
+				ctx.lineTo((x * blockSize) + 1.1*(blockSize / 2.5), (y * blockSize) + (blockSize / 2.5)+ (blockSize / 3));
+				ctx.moveTo((x * blockSize) + 1.6*(blockSize / 2.5), (y * blockSize) + 1.45*(blockSize / 2.5));
+				ctx.lineTo((x * blockSize) + (blockSize / 2.5) + (blockSize / 2), (y * blockSize) + (blockSize / 2.5)+ (blockSize / 3));
+				ctx.stroke();
 	        }
         }
         ctx.closePath();	 
@@ -775,7 +977,8 @@ var PACMAN = (function () {
     var state        = WAITING,
         audio        = null,
         ghosts       = [],
-        ghostSpecs   = ["#00FFDE", "#FF0000", "#FFB8DE", "#FFB847"],
+        //ghostSpecs   = ["#00FFDE", "#FF0000", "#FFB8DE", "#FFB847"],
+        ghostSpecs   = ["#00ccb1", "#990000", "#ff1a94", "#e68e00"],
         eatenCount   = 0,
         level        = 0,
         tick         = 0,
@@ -803,10 +1006,10 @@ var PACMAN = (function () {
     
     function dialog(text) {
         ctx.fillStyle = "#FFFF00";
-        ctx.font      = "14px BDCartoonShoutRegular";
+        ctx.font      = "18px Calibri";
         var width = ctx.measureText(text).width,
             x     = ((map.width * map.blockSize) - width) / 2;        
-        ctx.fillText(text, x, (map.height * 10) + 8);
+        ctx.fillText(text, x, 0.98*(map.height * 10) + 8);
     }
 
     function soundDisabled() {
@@ -883,26 +1086,27 @@ var PACMAN = (function () {
         ctx.fillStyle = "#FFFF00";
 
         for (var i = 0, len = user.getLives(); i < len; i++) {
-            ctx.fillStyle = "#FFFF00";
+            ctx.fillStyle = "#ffff99";
             ctx.beginPath();
-            ctx.moveTo(150 + (25 * i) + map.blockSize / 2,
+            ctx.moveTo(300 + (25 * i) + map.blockSize / 2,
                        (topLeft+1) + map.blockSize / 2);
             
-            ctx.arc(150 + (25 * i) + map.blockSize / 2,
+            ctx.arc(300 + (25 * i) + map.blockSize / 2,
                     (topLeft+1) + map.blockSize / 2,
-                    map.blockSize / 2, Math.PI * 0.25, Math.PI * 1.75, false);
+                    0.6*map.blockSize / 2, Math.PI * 0.25, Math.PI * 1.75, false);
             ctx.fill();
         }
 
         ctx.fillStyle = !soundDisabled() ? "#00FF00" : "#FF0000";
         ctx.font = "bold 16px sans-serif";
-        //ctx.fillText("♪", 10, textBase);
-        ctx.fillText("s", 10, textBase);
+        ctx.fillText("♪", 10, textBase);
+        //ctx.fillText("s", 10, textBase);
 
         ctx.fillStyle = "#FFFF00";
-        ctx.font      = "14px BDCartoonShoutRegular";
-        ctx.fillText("Score: " + user.theScore(), 30, textBase);
-        ctx.fillText("Level: " + level, 260, textBase);
+        ctx.font      = "14px Calibri";
+        ctx.fillText("Letters Nommed: " + user.theScore()/10, 30, textBase);
+        //ctx.fillText("Level: " + level, 260, textBase);
+        ctx.fillText("Chorbs Remaining: ", 190, textBase);
     }
 
     function redrawBlock(pos) {
@@ -930,7 +1134,10 @@ var PACMAN = (function () {
             ghosts[i].draw(ctx);
         }                     
         user.draw(ctx);
-        
+		//keep playing "eating.mp3" or .ogg every step whatevre happens
+		//i can't believe i found a place to insert it
+		audio.play("eating");
+
         userPos = u["new"];
         
         for (i = 0, len = ghosts.length; i < len; i += 1) {
@@ -968,7 +1175,7 @@ var PACMAN = (function () {
         } else if (state === WAITING && stateChanged) {            
             stateChanged = false;
             map.draw(ctx);
-            dialog("Press N to start a New game");            
+            dialog("Press N to start doing normal chorb things");            
         } else if (state === EATEN_PAUSE && 
                    (tick - timerStart) > (Pacman.FPS / 3)) {
             map.draw(ctx);
@@ -1267,3 +1474,16 @@ Object.prototype.clone = function () {
     }
     return newObj;
 };
+
+$(function(){
+  var el = document.getElementById("pacman");
+
+  if (Modernizr.canvas && Modernizr.localstorage && 
+      Modernizr.audio && (Modernizr.audio.ogg || Modernizr.audio.mp3)) {
+    window.setTimeout(function () { PACMAN.init(el, "https://raw.githubusercontent.com/aloomey/pacchorb/master/"); }, 0);
+  } else { 
+    el.innerHTML = "Sorry, one of the following browsers is needed <br /><small>" + 
+      "(firefox 3.6+, Chrome 4+, Opera 10+ and Safari 4+)</small>";
+  }
+});
+
