@@ -1134,8 +1134,7 @@ var PACMAN = (function () {
             ghosts[i].draw(ctx);
         }                     
         user.draw(ctx);
-		//keep playing "eating.mp3" or .ogg every step whatevre happens
-		//i can't believe i found a place to insert it
+		//keep playing "eating.mp3" or .ogg every step whatever happens
 		audio.play("eating");
 
         userPos = u["new"];
